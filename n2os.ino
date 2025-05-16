@@ -3,40 +3,41 @@
 #include <RTClib.h>
 #include <DHT.h>
 #include <ESP8266WebServer.h>
-#include <SSD1306.h>  // Используем эту библиотеку для дисплея
+#include <SSD1306.h>
 
-#define DHTPIN D3       // Pin for DHT11 sensor
-#define DHTTYPE DHT11   // DHT11 sensor type
+// Made for Sliz-TM dont copy! Thin is not licence and Open software!
 
-#define BUZZER_PIN D5   // Pin for the buzzer
-#define SCREEN_WIDTH 128 // OLED display width
-#define SCREEN_HEIGHT 64 // OLED display height
+#define DHTPIN D3
+#define DHTTYPE DHT11
 
-SSD1306 display(0x3C, 14, 12);  // Инициализация дисплея с адресом и пинами (поменял на D1 и D2)
+#define BUZZER_PIN D5
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
-DHT dht(DHTPIN, DHTTYPE);  // Initialize DHT
-RTC_DS3231 rtc;            // Initialize DS3231 RTC
-ESP8266WebServer server(80); // Web server running on port 80
+SSD1306 display(0x3C, 14, 12);
 
-const char* ssid = "Denis";         // Wi-Fi SSID
-const char* password = "WiSher1983"; // Wi-Fi password
+DHT dht(DHTPIN, DHTTYPE);
+RTC_DS3231 rtc;
+ESP8266WebServer server(80);
 
-String terminal_output = "%NaN V2%>>>";  // Terminal prompt
-String terminal_input = "";               // User input for commands
+const char* ssid = "SSID"; // Enter you WI-FI SSID
+const char* password = "Password"; // Enter you WI-FI Password
 
-// Инициализация дисплея и других компонентов
-bool animationDone = false;  // Флаг анимации
+String terminal_output = "%NaN V2%>>>";
+String terminal_input = "";
+
+bool animationDone = false;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); // Upload Speed 115200!
 
   // Initialize the display
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // Используем begin вместо init для правильной инициализации
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
     for (;;);
   }
   display.display();
-  delay(2000);  // Pause for 2 seconds
+  delay(2000);
 
   // Setup the display
   display.clear();
@@ -66,7 +67,6 @@ void setup() {
     display.display();
   }
 
-  // Display IP address after connection
   display.clear();
   display.print("Connected!");
   display.print("\nIP: ");
@@ -86,73 +86,62 @@ void setup() {
 }
 
 void loop() {
-  server.handleClient();  // Handle HTTP requests
+  server.handleClient();
   
   if (!animationDone) {
-    // Анимация перед запуском ОС
     for (int x = 128; x >= 64; x -= 2) {
       display.clear();
-      drawWheel(x, 32, 0); // Рисуем колесо в текущей позиции
-      display.display();
-      delay(30); // Задержка между кадрами
-    }
-
-    // Остановка колеса в центре и его вращение
-    for (int i = 0; i < 150; i++) { // Вращение в течение 5 секунд
-      display.clear();
-      drawWheel(64, 32, i * 10); // Угол вращения увеличивается
+      drawWheel(x, 32, 0);
       display.display();
       delay(30);
     }
 
-    // Уезд колеса влево
+    for (int i = 0; i < 150; i++) {
+      display.clear();
+      drawWheel(64, 32, i * 10);
+      display.display();
+      delay(30);
+    }
+
     for (int x = 64; x >= -40; x -= 2) {
       display.clear();
-      drawWheel(x, 32, 0); // Рисуем колесо в текущей позиции
+      drawWheel(x, 32, 0);
       display.display();
       delay(30);
     }
 
-    // После выполнения анимации установить флаг
     animationDone = true;
   }
 
-  // Отображение текста "N2 OS" постоянно
   displayText();
 }
 
-// Функция для рисования колеса
 void drawWheel(int x, int y, int angle) {
-  display.setColor(SSD1306_WHITE); // Белый цвет для колеса
-  display.drawCircle(x, y, 20);  // Внешний круг (колесо)
-  display.drawCircle(x, y, 15);  // Внутренний круг (детали)
+  display.setColor(SSD1306_WHITE);
+  display.drawCircle(x, y, 20);
+  display.drawCircle(x, y, 15);
   
-  // Линии для вращения внутри колеса
-  float rad = angle * 3.14159 / 180.0; // Преобразование в радианы
+  float rad = angle * 3.14159 / 180.0;
   display.drawLine(x + cos(rad) * 10, y + sin(rad) * 10, 
-                   x - cos(rad) * 10, y - sin(rad) * 10); // Линия механизма
+                   x - cos(rad) * 10, y - sin(rad) * 10);
   display.drawLine(x + cos(rad + 3.14159 / 2) * 10, y + sin(rad + 3.14159 / 2) * 10,
-                   x - cos(rad + 3.14159 / 2) * 10, y - sin(rad + 3.14159 / 2) * 10); // Вторая линия механизма
+                   x - cos(rad + 3.14159 / 2) * 10, y - sin(rad + 3.14159 / 2) * 10);
 
-  // Добавление знака бесконечности внутри колеса
-  display.setColor(SSD1306_BLACK);    // Черный для надписей внутри
+  display.setColor(SSD1306_BLACK);
   display.drawString(x - 5, y - 10, "∞");
 
-  // Добавление знаков "+" и "-" в окошечках колеса
   display.drawString(x - 10, y - 5, "+");
   display.drawString(x + 5, y + 5, "-");
 }
 
-// Функция для отображения текста "N2 OS"
 void displayText() {
   display.clear();
-  display.setFont(ArialMT_Plain_24); // Настройка шрифта
-  display.setColor(SSD1306_WHITE); // Белый цвет для текста
-  int textWidth = display.getStringWidth("N2 OS"); // Вычисляем ширину текста
-  int textHeight = 24; // Высота текста с учетом выбранного шрифта
+  display.setFont(ArialMT_Plain_24);
+  display.setColor(SSD1306_WHITE);
+  int textWidth = display.getStringWidth("N2 OS");
+  int textHeight = 24;
 
-  // Отображаем текст по центру
-  display.drawString((128 - textWidth) / 2, (64 - textHeight) / 2, "N2 OS"); // Центрируем текст по горизонтали и вертикали
+  display.drawString((128 - textWidth) / 2, (64 - textHeight) / 2, "N2 OS");
   display.display();
 }
 
